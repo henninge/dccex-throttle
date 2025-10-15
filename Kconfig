@@ -1,0 +1,17 @@
+config THROTTLE_SAMPLES
+	int "Number of samples to be made on ADC channel for the throttle."
+	default 10
+
+config THROTTLE_MIN
+	int "The mnimum raw throttle value where speed = 0."
+	default 700
+
+config THROTTLE_MAX
+	int "The maximum raw throttle value where speed = 127."
+	default 2700
+
+config THROTTLE_POLL_MSEC
+	int "The polling interval in milliseconds."
+	default 100
+
+source "Kconfig.zephyr"
