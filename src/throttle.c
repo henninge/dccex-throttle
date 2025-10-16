@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -28,33 +29,73 @@ LOG_MODULE_REGISTER(THROTTLE);
 
 #define THROTTLE_RANGE (CONFIG_THROTTLE_MAX - CONFIG_THROTTLE_MIN)
 
-/* Data of ADC io-channels specified in devicetree. */
 static const struct adc_dt_spec adc_throttle = ADC_DT_SPEC_GET_BY_IDX(DT_PATH(zephyr_user), 0);
 
+static uint16_t samples[CONFIG_THROTTLE_SAMPLES];
+static const struct adc_sequence_options options = {
+	.extra_samplings = CONFIG_THROTTLE_SAMPLES - 1,
+	.interval_us = 0,
+};
+static struct adc_sequence sequence = {
+	.buffer = samples,
+	.buffer_size = sizeof(samples),
+	.options = &options,
+};
 
-uint16_t calc_avg(uint16_t *samples) {
-	uint32_t sum = 0;
-	for (int i = 0; i < CONFIG_THROTTLE_SAMPLES; i++) {
-		sum += samples[i];
+uint16_t calc_avg(uint16_t *samples);
+int32_t convert_val(int32_t raw_val);
+static int32_t throttle_read(const struct adc_dt_spec *adc_throttle);
+static void throttle_handle(int32_t value);
+static void throttle_poll_loop();
+static bool throttle_setup();
+static void throttle_thread_entry(void *arg1, void *arg2, void *arg3);
+
+
+K_THREAD_DEFINE(throttle_thread, THROTTLE_THREAD_STACK_SIZE,
+				throttle_thread_entry, NULL, NULL, NULL,
+				THROTTLE_THREAD_PRIORITY, 0, 0);
+
+
+static void throttle_thread_entry(void *arg1, void *arg2, void *arg3) {
+	LOG_INF("throttle_thread starting");
+	if (!throttle_setup()) {
+		return;
 	}
-	return (uint16_t)(sum / CONFIG_THROTTLE_SAMPLES);
+	throttle_poll_loop();
 }
 
-int32_t throttle_read(const struct adc_dt_spec *adc_throttle) {
-	uint16_t samples[CONFIG_THROTTLE_SAMPLES];
+static bool throttle_setup() {
+	int err;
 
-	/* Options for the sequence sampling. */
-	const struct adc_sequence_options options = {
-		.extra_samplings = CONFIG_THROTTLE_SAMPLES - 1,
-		.interval_us = 0,
-	};
+	/* Configure channel prior to sampling. */
+	if (!adc_is_ready_dt(&adc_throttle)) {
+		LOG_ERR("ADC controller device %s not ready", adc_throttle.dev->name);
+		return false;
+	}
 
-	/* Configure the sampling sequence to be made. */
-	struct adc_sequence sequence = {
-		.buffer = samples,
-		.buffer_size = sizeof(samples),
-		.options = &options,
-	};
+	err = adc_channel_setup_dt(&adc_throttle);
+	if (err < 0) {
+		LOG_ERR("Could not setup adcchannel (%d)", err);
+		return false;
+	}
+	return true;
+}
+
+static void throttle_poll_loop() {
+	int32_t value;
+	
+	while (1) {
+		value = throttle_read(&adc_throttle);
+		if (value < 0) {
+			LOG_WRN("Could not read (%d)\n", value);
+			continue;
+		}
+		throttle_handle(value);
+		k_sleep(K_MSEC(CONFIG_THROTTLE_POLL_MSEC));
+	}
+}
+
+static int32_t throttle_read(const struct adc_dt_spec *adc_throttle) {
 	(void)adc_sequence_init_dt(adc_throttle, &sequence);
 
 	int err = adc_read_dt(adc_throttle, &sequence);
@@ -62,6 +103,18 @@ int32_t throttle_read(const struct adc_dt_spec *adc_throttle) {
 		return (int32_t)err;
 	}
 	return calc_avg(samples);
+}
+
+static void throttle_handle(int32_t value) {
+		printk("%d\n", convert_val(value));
+}
+
+uint16_t calc_avg(uint16_t *samples) {
+	uint32_t sum = 0;
+	for (int i = 0; i < CONFIG_THROTTLE_SAMPLES; i++) {
+		sum += samples[i];
+	}
+	return (uint16_t)(sum / CONFIG_THROTTLE_SAMPLES);
 }
 
 int32_t convert_val(int32_t raw_val) {
@@ -77,38 +130,3 @@ int32_t convert_val(int32_t raw_val) {
 
 	return (int32_t)(ratio * 128.0);
 }
-
-static void throttle_thread_entry(void *arg1, void *arg2, void *arg3) {
-	LOG_INF("throttle_thread starting");
-	int err;
-
-	/* Configure channel prior to sampling. */
-	if (!adc_is_ready_dt(&adc_throttle)) {
-		LOG_ERR("ADC controller device %s not ready", adc_throttle.dev->name);
-		return;
-	}
-
-	err = adc_channel_setup_dt(&adc_throttle);
-	if (err < 0) {
-		LOG_ERR("Could not setup adcchannel (%d)", err);
-		return;
-	}
-
-	while (1) {
-		int32_t value;
-
-		value = throttle_read(&adc_throttle);
-		if (value < 0) {
-			LOG_WRN("Could not read (%d)\n", err);
-			continue;
-		}
-
-		printk("%d\n", convert_val(value));
-
-		k_sleep(K_MSEC(CONFIG_THROTTLE_POLL_MSEC));
-	}
-}
-
-K_THREAD_DEFINE(throttle_thread, THROTTLE_THREAD_STACK_SIZE,
-				throttle_thread_entry, NULL, NULL, NULL,
-				THROTTLE_THREAD_PRIORITY, 0, 0);
