@@ -6,4 +6,5 @@ target_sources(
 	app PRIVATE
 	src/console.c
 	src/throttle.c
+	src/queue.c
 )

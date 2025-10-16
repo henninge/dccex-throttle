@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdlib.h>
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -16,6 +17,8 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
+
+#include "queue.h"
 
 LOG_MODULE_REGISTER(THROTTLE);
 
@@ -43,7 +46,8 @@ static struct adc_sequence sequence = {
 };
 
 uint16_t calc_avg(uint16_t *samples);
-int32_t convert_val(int32_t raw_val);
+int32_t convert_to_speed(int32_t raw_val);
+bool has_speed_changed(int32_t speed);
 static int32_t throttle_read(const struct adc_dt_spec *adc_throttle);
 static void throttle_handle(int32_t value);
 static void throttle_poll_loop();
@@ -105,10 +109,6 @@ static int32_t throttle_read(const struct adc_dt_spec *adc_throttle) {
 	return calc_avg(samples);
 }
 
-static void throttle_handle(int32_t value) {
-		printk("%d\n", convert_val(value));
-}
-
 uint16_t calc_avg(uint16_t *samples) {
 	uint32_t sum = 0;
 	for (int i = 0; i < CONFIG_THROTTLE_SAMPLES; i++) {
@@ -117,7 +117,24 @@ uint16_t calc_avg(uint16_t *samples) {
 	return (uint16_t)(sum / CONFIG_THROTTLE_SAMPLES);
 }
 
-int32_t convert_val(int32_t raw_val) {
+static int32_t last_sent_speed;
+
+static void throttle_handle(int32_t value) {
+	int32_t speed = convert_to_speed(value);
+	if (has_speed_changed(speed)) {
+		printk("%d\n", speed);
+		queue_send_speed(speed);
+		last_sent_speed = speed;
+	}
+}
+
+bool has_speed_changed(int32_t speed) {
+	return speed != last_sent_speed && (
+		speed == 0 || speed >= 127 || abs(speed-last_sent_speed) > 2
+	);
+}
+
+int32_t convert_to_speed(int32_t raw_val) {
 	if (raw_val < CONFIG_THROTTLE_MIN) {
 		raw_val = 0;
 	} else if (raw_val >= CONFIG_THROTTLE_MAX) {
