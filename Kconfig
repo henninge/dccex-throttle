@@ -1,16 +1,16 @@
-config THROTTLE_SAMPLES
-	int "Number of samples to be made on ADC channel for the throttle."
+config POTI_SAMPLES
+	int "Number of samples to be made on ADC channel for the potentiometer."
 	default 10
 
-config THROTTLE_MIN
-	int "The mnimum raw throttle value where speed = 0."
+config POTI_MIN
+	int "The mnimum raw adc value where speed = 0 (range 0-4095)."
 	default 700
 
-config THROTTLE_MAX
-	int "The maximum raw throttle value where speed = 127."
+config POTI_MAX
+	int "The maximum raw adc value where speed = 127 (range 0-4095)."
 	default 2700
 
-config THROTTLE_POLL_MSEC
+config POTI_POLL_MSEC
 	int "The polling interval in milliseconds."
 	default 100
 

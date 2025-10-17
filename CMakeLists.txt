@@ -5,6 +5,6 @@ project(dccex-throttle)
 target_sources(
 	app PRIVATE
 	src/console.c
-	src/throttle.c
+	src/poti.c
 	src/queue.c
 )

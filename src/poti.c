@@ -20,23 +20,23 @@
 
 #include "queue.h"
 
-LOG_MODULE_REGISTER(THROTTLE);
+LOG_MODULE_REGISTER(POTI);
 
 #if !DT_NODE_EXISTS(DT_PATH(zephyr_user))
 #error "No suitable devicetree overlay specified"
 #endif
 
 
-#define THROTTLE_THREAD_STACK_SIZE 1024
-#define THROTTLE_THREAD_PRIORITY 99
+#define POTI_THREAD_STACK_SIZE 1024
+#define POTI_THREAD_PRIORITY 99
 
-#define THROTTLE_RANGE (CONFIG_THROTTLE_MAX - CONFIG_THROTTLE_MIN)
+#define POTI_RANGE (CONFIG_POTI_MAX - CONFIG_POTI_MIN)
 
-static const struct adc_dt_spec adc_throttle = ADC_DT_SPEC_GET_BY_IDX(DT_PATH(zephyr_user), 0);
+static const struct adc_dt_spec adc_poti = ADC_DT_SPEC_GET_BY_IDX(DT_PATH(zephyr_user), 0);
 
-static uint16_t samples[CONFIG_THROTTLE_SAMPLES];
+static uint16_t samples[CONFIG_POTI_SAMPLES];
 static const struct adc_sequence_options options = {
-	.extra_samplings = CONFIG_THROTTLE_SAMPLES - 1,
+	.extra_samplings = CONFIG_POTI_SAMPLES - 1,
 	.interval_us = 0,
 };
 static struct adc_sequence sequence = {
@@ -48,36 +48,36 @@ static struct adc_sequence sequence = {
 uint16_t calc_avg(uint16_t *samples);
 int32_t convert_to_speed(int32_t raw_val);
 bool has_speed_changed(int32_t speed);
-static int32_t throttle_read(const struct adc_dt_spec *adc_throttle);
-static void throttle_handle(int32_t value);
-static void throttle_poll_loop();
-static bool throttle_setup();
-static void throttle_thread_entry(void *arg1, void *arg2, void *arg3);
+static int32_t poti_read(const struct adc_dt_spec *adc_poti);
+static void poti_handle(int32_t value);
+static void poti_poll_loop();
+static bool poti_setup();
+static void poti_thread_entry(void *arg1, void *arg2, void *arg3);
 
 
-K_THREAD_DEFINE(throttle_thread, THROTTLE_THREAD_STACK_SIZE,
-				throttle_thread_entry, NULL, NULL, NULL,
-				THROTTLE_THREAD_PRIORITY, 0, 0);
+K_THREAD_DEFINE(poti_thread, POTI_THREAD_STACK_SIZE,
+				poti_thread_entry, NULL, NULL, NULL,
+				POTI_THREAD_PRIORITY, 0, 0);
 
 
-static void throttle_thread_entry(void *arg1, void *arg2, void *arg3) {
-	LOG_INF("throttle_thread starting");
-	if (!throttle_setup()) {
+static void poti_thread_entry(void *arg1, void *arg2, void *arg3) {
+	LOG_INF("poti_thread starting");
+	if (!poti_setup()) {
 		return;
 	}
-	throttle_poll_loop();
+	poti_poll_loop();
 }
 
-static bool throttle_setup() {
+static bool poti_setup() {
 	int err;
 
 	/* Configure channel prior to sampling. */
-	if (!adc_is_ready_dt(&adc_throttle)) {
-		LOG_ERR("ADC controller device %s not ready", adc_throttle.dev->name);
+	if (!adc_is_ready_dt(&adc_poti)) {
+		LOG_ERR("ADC controller device %s not ready", adc_poti.dev->name);
 		return false;
 	}
 
-	err = adc_channel_setup_dt(&adc_throttle);
+	err = adc_channel_setup_dt(&adc_poti);
 	if (err < 0) {
 		LOG_ERR("Could not setup adcchannel (%d)", err);
 		return false;
@@ -85,24 +85,24 @@ static bool throttle_setup() {
 	return true;
 }
 
-static void throttle_poll_loop() {
+static void poti_poll_loop() {
 	int32_t value;
 	
 	while (1) {
-		value = throttle_read(&adc_throttle);
+		value = poti_read(&adc_poti);
 		if (value < 0) {
 			LOG_WRN("Could not read (%d)\n", value);
 			continue;
 		}
-		throttle_handle(value);
-		k_sleep(K_MSEC(CONFIG_THROTTLE_POLL_MSEC));
+		poti_handle(value);
+		k_sleep(K_MSEC(CONFIG_POTI_POLL_MSEC));
 	}
 }
 
-static int32_t throttle_read(const struct adc_dt_spec *adc_throttle) {
-	(void)adc_sequence_init_dt(adc_throttle, &sequence);
+static int32_t poti_read(const struct adc_dt_spec *adc_poti) {
+	(void)adc_sequence_init_dt(adc_poti, &sequence);
 
-	int err = adc_read_dt(adc_throttle, &sequence);
+	int err = adc_read_dt(adc_poti, &sequence);
 	if (err < 0) {
 		return (int32_t)err;
 	}
@@ -111,15 +111,15 @@ static int32_t throttle_read(const struct adc_dt_spec *adc_throttle) {
 
 uint16_t calc_avg(uint16_t *samples) {
 	uint32_t sum = 0;
-	for (int i = 0; i < CONFIG_THROTTLE_SAMPLES; i++) {
+	for (int i = 0; i < CONFIG_POTI_SAMPLES; i++) {
 		sum += samples[i];
 	}
-	return (uint16_t)(sum / CONFIG_THROTTLE_SAMPLES);
+	return (uint16_t)(sum / CONFIG_POTI_SAMPLES);
 }
 
 static int32_t last_sent_speed;
 
-static void throttle_handle(int32_t value) {
+static void poti_handle(int32_t value) {
 	int32_t speed = convert_to_speed(value);
 	if (has_speed_changed(speed)) {
 		printk("%d\n", speed);
@@ -135,15 +135,15 @@ bool has_speed_changed(int32_t speed) {
 }
 
 int32_t convert_to_speed(int32_t raw_val) {
-	if (raw_val < CONFIG_THROTTLE_MIN) {
+	if (raw_val < CONFIG_POTI_MIN) {
 		raw_val = 0;
-	} else if (raw_val >= CONFIG_THROTTLE_MAX) {
-		raw_val = THROTTLE_RANGE-1;
+	} else if (raw_val >= CONFIG_POTI_MAX) {
+		raw_val = POTI_RANGE-1;
 	} else {
-		raw_val -= CONFIG_THROTTLE_MIN;
+		raw_val -= CONFIG_POTI_MIN;
 	}
 
-	double ratio = ((double)raw_val)/THROTTLE_RANGE;
+	double ratio = ((double)raw_val)/POTI_RANGE;
 
 	return (int32_t)(ratio * 128.0);
 }
