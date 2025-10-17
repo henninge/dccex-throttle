@@ -18,6 +18,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 
+#include "thread_prios.h"
 #include "queue.h"
 
 LOG_MODULE_REGISTER(POTI);
@@ -26,9 +27,7 @@ LOG_MODULE_REGISTER(POTI);
 #error "No suitable devicetree overlay specified"
 #endif
 
-
 #define POTI_THREAD_STACK_SIZE 1024
-#define POTI_THREAD_PRIORITY -10
 
 #define POTI_RANGE (CONFIG_POTI_MAX - CONFIG_POTI_MIN)
 

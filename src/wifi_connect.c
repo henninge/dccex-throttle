@@ -8,7 +8,8 @@
 
 #include <string.h>
 
-#define WIFI_CONNECT_PRIO 98
+#include "thread_prios.h"
+
 
 LOG_MODULE_REGISTER(WIFI);
 

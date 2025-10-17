@@ -6,6 +6,7 @@ target_sources(
 	app PRIVATE
 	src/poti.c
 	src/queue.c
+	src/dcc.c
 )
 
 target_sources_ifdef(CONFIG_WIFI

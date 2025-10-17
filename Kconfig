@@ -20,4 +20,8 @@ config WIFI_SSID
 config WIFI_PASSWORD
 	string "The password for the DCC-EX wifi to connect to."
 
+config DCC_IP
+	string "The IP of the DCC-EX control center."
+	default "192.168.4.1"
+
 source "Kconfig.zephyr"
