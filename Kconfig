@@ -14,4 +14,10 @@ config POTI_POLL_MSEC
 	int "The polling interval in milliseconds."
 	default 100
 
+config WIFI_SSID
+	string "The SSID of the DCC-EX wifi to connect to."
+
+config WIFI_PASSWORD
+	string "The password for the DCC-EX wifi to connect to."
+
 source "Kconfig.zephyr"

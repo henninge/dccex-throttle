@@ -4,7 +4,16 @@ project(dccex-throttle)
 
 target_sources(
 	app PRIVATE
-	src/console.c
 	src/poti.c
 	src/queue.c
+)
+
+target_sources_ifdef(CONFIG_WIFI
+	app PRIVATE
+	src/wifi_connect.c
+)
+
+target_sources_ifdef(CONFIG_CONSOLE
+	app PRIVATE
+	src/console.c
 )
