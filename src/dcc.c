@@ -15,15 +15,28 @@ typedef struct dcc_connection {
 	int sock;
 } DccConnection;
 
+typedef struct dcc_message {
+	int addr;
+	int speed;
+	int direction;
+} DccCommand;
+
 DccConnection dcc_conn = {
 	.sock = -1
+};
+
+DccCommand last_cmd = {
+	.addr = 3,
+	.speed = 0,
+	.direction = 1
 };
 
 static int dcc_connect();
 static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3);
 static void dcc_recv_thread_entry(void *arg1, void *arg2, void *arg3);
+void update_cmd_from_message(struct message msg, DccCommand *cmd);
 int dcc_send(DccConnection* conn, char* command);
-
+void dcc_format_command(char *cmd_buffer, DccCommand cmd);
 
 SYS_INIT(dcc_connect, APPLICATION, DCC_CONNECT_PRIO);
 
@@ -69,12 +82,27 @@ int dcc_connect() {
 static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3) {
 	LOG_INF("send_thread starting");
 	DccConnection *conn = (DccConnection *)arg1;
-	struct message speed_msg;
+	struct message msg;
 	char dcc_command[20];
 	while(1) {
-		speed_msg = queue_receive();
-		sprintf(dcc_command, "<t 3 %d 0>", speed_msg.speed);
+		msg = queue_receive();
+		update_cmd_from_message(msg, &last_cmd);
+		dcc_format_command(dcc_command, last_cmd);
 		dcc_send(conn, dcc_command);
+	}
+}
+
+void update_cmd_from_message(struct message msg, DccCommand *cmd) {
+	switch(msg.type) {
+	case MSG_SPEED:
+		cmd->speed = msg.value;
+		break;
+	case MSG_DIRECTION:
+		if (msg.value != cmd->direction) {
+			cmd->speed = 0;
+			cmd->direction = msg.value;
+		}
+		break;
 	}
 }
 
@@ -121,6 +149,9 @@ int dcc_send(DccConnection* conn, char* command) {
 	return 0;
 }
 
+void dcc_format_command(char *cmd_buffer, DccCommand cmd){
+	sprintf(cmd_buffer, "<t %d %d %d>", cmd.addr, cmd.speed, cmd.direction);
+}
 
 // Ping (no of loco slots) "<#>"
 // Track Info "<=>"

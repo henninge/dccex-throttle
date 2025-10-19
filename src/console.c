@@ -3,10 +3,10 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 
+#include "thread_prios.h"
+
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_console), zephyr_cdc_acm_uart),
 	"Console device is not ACM CDC UART device");
-
-#define CONSOLE_INIT_PRIO 97
 
 int console_init() {
 	const struct device *dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_console));

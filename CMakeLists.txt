@@ -7,6 +7,7 @@ target_sources(
 	src/poti.c
 	src/queue.c
 	src/dcc.c
+	src/buttons.c
 )
 
 target_sources_ifdef(CONFIG_WIFI

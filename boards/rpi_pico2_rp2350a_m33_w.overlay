@@ -1,10 +1,33 @@
 / {
+	aliases {
+		btn-forward = &button0;
+		btn-backward = &button1;
+	};
 	chosen {
 		zephyr,console = &cdc_acm_uart0;
 	};
 	zephyr,user {
 		io-channels = <&adc 0>;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		led_0: led_0 {
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	buttons {
+			 compatible = "gpio-keys";
+			 button0: button_0 {
+					 gpios = <&gpio0 15 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+					 label = "Forward button";
+			 };
+			 button1: button_1 {
+					 gpios = <&gpio0 14 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+					 label = "Backward button";
+			 };
+	 };
 };
 
 &zephyr_udc0 {
