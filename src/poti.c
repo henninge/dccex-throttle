@@ -121,7 +121,6 @@ static int32_t last_sent_speed;
 static void poti_handle(int32_t value) {
 	int32_t speed = convert_to_speed(value);
 	if (has_speed_changed(speed)) {
-		printk("%d\n", speed);
 		queue_send_speed(speed);
 		last_sent_speed = speed;
 	}

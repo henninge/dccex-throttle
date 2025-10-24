@@ -1,10 +1,12 @@
+#include <stdint.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/socket.h>
 
-#include "thread_prios.h"
 #include "queue.h"
+#include "thread_prios.h"
+#include "state.h"
 
 LOG_MODULE_REGISTER(DCC);
 
@@ -34,7 +36,7 @@ DccCommand last_cmd = {
 static int dcc_connect();
 static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3);
 static void dcc_recv_thread_entry(void *arg1, void *arg2, void *arg3);
-void update_cmd_from_message(struct message msg, DccCommand *cmd);
+void update_cmd_from_state(DesiredSpeed state, DccCommand *cmd);
 int dcc_send(DccConnection* conn, char* command);
 void dcc_format_command(char *cmd_buffer, DccCommand cmd);
 
@@ -82,28 +84,27 @@ int dcc_connect() {
 static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3) {
 	LOG_INF("send_thread starting");
 	DccConnection *conn = (DccConnection *)arg1;
-	struct message msg;
 	char dcc_command[20];
+	DesiredSpeed current;
+	DesiredSpeed previous = {
+		.speed = 0,
+		.direction = DIR_FORWARD
+	};
 	while(1) {
-		msg = queue_receive();
-		update_cmd_from_message(msg, &last_cmd);
-		dcc_format_command(dcc_command, last_cmd);
-		dcc_send(conn, dcc_command);
+		current = get_desired_speed();
+		if(has_desired_speed_changed(previous, current)) {
+			previous = current;
+			update_cmd_from_state(current, &last_cmd);
+			dcc_format_command(dcc_command, last_cmd);
+			dcc_send(conn, dcc_command);
+		}
+		k_sleep(K_SECONDS(1));
 	}
 }
 
-void update_cmd_from_message(struct message msg, DccCommand *cmd) {
-	switch(msg.type) {
-	case MSG_SPEED:
-		cmd->speed = msg.value;
-		break;
-	case MSG_DIRECTION:
-		if (msg.value != cmd->direction) {
-			cmd->speed = 0;
-			cmd->direction = msg.value;
-		}
-		break;
-	}
+void update_cmd_from_state(DesiredSpeed state, DccCommand *cmd) {
+	cmd->speed = state.speed;
+	cmd->direction = state.direction;
 }
 
 static void dcc_recv_thread_entry(void *arg1, void *arg2, void *arg3)

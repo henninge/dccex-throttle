@@ -8,6 +8,7 @@ target_sources(
 	src/queue.c
 	src/dcc.c
 	src/buttons.c
+	src/state.c
 )
 
 target_sources_ifdef(CONFIG_WIFI
