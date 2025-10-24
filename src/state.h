@@ -4,12 +4,12 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct desired_speed {
+typedef struct velocity_state {
     uint16_t speed;
     uint16_t direction;
-} DesiredSpeed;
+} VelocityState;
 
-extern DesiredSpeed get_desired_speed();
-extern bool has_desired_speed_changed(DesiredSpeed old, DesiredSpeed new);
+extern VelocityState get_desired_velocity();
+extern bool has_velocity_state_changed(VelocityState old, VelocityState new);
 
 #endif

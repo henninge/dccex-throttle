@@ -2,6 +2,8 @@
 	aliases {
 		btn-forward = &button0;
 		btn-backward = &button1;
+		led-forward = &led0;
+		led-backward = &led1;
 	};
 	chosen {
 		zephyr,console = &cdc_acm_uart0;
@@ -12,8 +14,11 @@
 
 	leds {
 		compatible = "gpio-leds";
-		led_0: led_0 {
+		led0: led_0 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+		};
+		led1: led_1 {
+			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
