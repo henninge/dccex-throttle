@@ -33,6 +33,8 @@ DccCommand last_cmd = {
 	.direction = 1
 };
 
+#define DCC_PING "<#>"
+
 static int dcc_connect();
 static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3);
 static void dcc_recv_thread_entry(void *arg1, void *arg2, void *arg3);
@@ -90,6 +92,7 @@ static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3) {
 		.speed = 0,
 		.direction = DIR_FORWARD
 	};
+	int seconds_since_last_send = 0;
 	while(1) {
 		current = get_desired_speed();
 		if(has_desired_speed_changed(previous, current)) {
@@ -97,8 +100,13 @@ static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3) {
 			update_cmd_from_state(current, &last_cmd);
 			dcc_format_command(dcc_command, last_cmd);
 			dcc_send(conn, dcc_command);
+			seconds_since_last_send = 0;
+		} else if(seconds_since_last_send > 60) {
+			dcc_send(conn, DCC_PING);
+			seconds_since_last_send = 0;
 		}
 		k_sleep(K_SECONDS(1));
+		seconds_since_last_send++;
 	}
 }
 
