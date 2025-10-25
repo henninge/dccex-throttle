@@ -1,0 +1,6 @@
+shield:
+  name: usb_acm_serial
+  full_name: USB CDC ACM serial device
+  vendor: acme
+  supported_features:
+    - usb

@@ -7,9 +7,9 @@
 		led-backward = &led1;
 		led-stop = &led2;
 	};
-	chosen {
-		zephyr,console = &cdc_acm_uart0;
-	};
+	// chosen {
+	// 	zephyr,console = &cdc_acm_uart0;
+	// };
 	zephyr,user {
 		io-channels = <&adc 0>;
 	};
@@ -42,13 +42,6 @@
 					 label = "Backward button";
 			 };
 	 };
-};
-
-&zephyr_udc0 {
-	cdc_acm_uart0: cdc_acm_uart0 {
-		compatible = "zephyr,cdc-acm-uart";
-		label = "CDC_ACM_0";
-	};
 };
 
 &adc {

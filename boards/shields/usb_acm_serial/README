@@ -1,0 +1,5 @@
+It is currently not possible to define application-specific shields.
+This directory needs to be symlinked into zephyr/boards/shields.
+See https://github.com/zephyrproject-rtos/zephyr/issues/86592
+
+Use with `west build --shield usb_acm_serial ...`.

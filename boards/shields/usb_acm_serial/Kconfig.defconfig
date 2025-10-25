@@ -1,0 +1,21 @@
+if SHIELD_USB_ACM_SERIAL
+
+config VL53L0X_RECONFIGURE_ADDRESS
+	default y if SENSOR
+
+config UART_LINE_CTRL
+	default y
+
+config USB_DEVICE_STACK_NEXT
+	default y
+
+config CDC_ACM_SERIAL_INITIALIZE_AT_BOOT
+	default y
+
+config CDC_ACM_SERIAL_PID
+	default 0x0004
+
+config CDC_ACM_SERIAL_PRODUCT_STRING
+	default "Zephyr UDB console"
+
+endif # SHIELD_USB_ACM_SERIAL

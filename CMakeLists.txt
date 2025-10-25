@@ -17,7 +17,7 @@ target_sources_ifdef(CONFIG_WIFI
 	src/wifi_connect.c
 )
 
-target_sources_ifdef(CONFIG_CONSOLE
+target_sources_ifdef(CONFIG_SHIELD_USB_ACM_SERIAL
 	app PRIVATE
 	src/console.c
 )
