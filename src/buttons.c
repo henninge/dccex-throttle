@@ -10,12 +10,16 @@ LOG_MODULE_REGISTER(BUTTONS);
 
 #define BTN_FORWARD DT_ALIAS(btn_forward)
 #define BTN_BACKWARD DT_ALIAS(btn_backward)
+#define BTN_STOP DT_ALIAS(btn_stop)
 
 #if !DT_NODE_HAS_STATUS(BTN_FORWARD, okay)
 #error "Unsupported board: btn-forward devicetree alias is not defined"
 #endif
 #if !DT_NODE_HAS_STATUS(BTN_BACKWARD, okay)
 #error "Unsupported board: btn-backward devicetree alias is not defined"
+#endif
+#if !DT_NODE_HAS_STATUS(BTN_STOP, okay)
+#error "Unsupported board: btn-stop devicetree alias is not defined"
 #endif
 
 static int btn_init();
@@ -28,11 +32,13 @@ struct buttons
 {
 	struct gpio_dt_spec forward;
 	struct gpio_dt_spec backward;
+	struct gpio_dt_spec stop;
 };
 
 static struct buttons buttons = {
 	.forward = GPIO_DT_SPEC_GET(BTN_FORWARD, gpios),
-	.backward = GPIO_DT_SPEC_GET(BTN_BACKWARD, gpios)
+	.backward = GPIO_DT_SPEC_GET(BTN_BACKWARD, gpios),
+	.stop = GPIO_DT_SPEC_GET(BTN_STOP, gpios)
 };
 
 static int btn_init()
@@ -45,6 +51,10 @@ static int btn_init()
 	if (!gpio_is_ready_dt(&buttons.backward)) {
 		LOG_ERR("Error: backward buttons device not ready");
 	}
+	gpio_pin_configure_dt(&buttons.stop, GPIO_INPUT);
+	if (!gpio_is_ready_dt(&buttons.stop)) {
+		LOG_ERR("Error: stop buttons device not ready");
+	}
 
 	btn_init_callback();
 	LOG_INF("Buttons initialized");
@@ -55,12 +65,13 @@ static struct gpio_callback buttons_cb_data;
 
 static void btn_init_callback(void)
 {
-	unsigned int pin_mask = BIT(buttons.forward.pin) | BIT(buttons.backward.pin);
+	unsigned int pin_mask = BIT(buttons.forward.pin) | BIT(buttons.backward.pin) | BIT(buttons.stop.pin);
 	gpio_pin_interrupt_configure_dt(&buttons.forward, GPIO_INT_EDGE_FALLING);
 	gpio_pin_interrupt_configure_dt(&buttons.backward, GPIO_INT_EDGE_FALLING);
+	gpio_pin_interrupt_configure_dt(&buttons.stop, GPIO_INT_EDGE_FALLING);
 	gpio_init_callback(&buttons_cb_data, btn_pressed, pin_mask);
 	gpio_add_callback(buttons.forward.port, &buttons_cb_data);
-	LOG_INF("Set up callback for buttonsd");
+	LOG_INF("Set up callback for buttons");
 }
 
 static void btn_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
@@ -68,13 +79,19 @@ static void btn_pressed(const struct device *dev, struct gpio_callback *cb, uint
 	if (pins & BIT(buttons.forward.pin))
 	{
 		int val = gpio_pin_get(dev, buttons.forward.pin);
-		LOG_INF("Forward button pressed, val= %d", val);
+		LOG_DBG("Forward button pressed, val= %d", val);
 		queue_send_direction(DIR_FORWARD);
 	}
 	if (pins & BIT(buttons.backward.pin))
 	{
 		int val = gpio_pin_get(dev, buttons.backward.pin);
-		LOG_INF("Backward button pressed, val= %d", val);
+		LOG_DBG("Backward button pressed, val= %d", val);
 		queue_send_direction(DIR_BACKWARD);
+	}
+	if (pins & BIT(buttons.stop.pin))
+	{
+		int val = gpio_pin_get(dev, buttons.stop.pin);
+		LOG_DBG("STOP button pressed, val= %d", val);
+		btn_set_stop();
 	}
 }

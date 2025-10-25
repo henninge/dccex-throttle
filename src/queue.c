@@ -6,6 +6,7 @@
 #include <zephyr/logging/log.h>
 
 #include "queue.h"
+#include "zephyr/sys/clock.h"
 
 LOG_MODULE_REGISTER(QUEUE);
 
@@ -40,4 +41,14 @@ struct message queue_receive() {
 		err = k_msgq_get(&message_queue, &received_msg, K_FOREVER);
 	} while(err != 0);
 	return received_msg;
+}
+
+K_SEM_DEFINE(btn_stop, 0, 1);
+
+bool btn_wait_stop(k_timeout_t timeout) {
+	return k_sem_take(&btn_stop, timeout) == 0;
+}
+
+void btn_set_stop() {
+	k_sem_give(&btn_stop);
 }

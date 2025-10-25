@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <sys/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
@@ -35,6 +36,7 @@ DccCommand last_cmd = {
 };
 
 #define DCC_PING "<#>"
+#define DCC_STOP "<!>"
 #define DCC_LOCO_STAT "<t 3>"
 
 static int dcc_connect();
@@ -100,7 +102,11 @@ static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3) {
 	dcc_send(conn, DCC_LOCO_STAT);
 	int seconds_since_last_send = 0;
 	while(1) {
-		k_sleep(K_SECONDS(1));
+		if(btn_wait_stop(K_SECONDS(1))) {
+			dcc_send(conn, DCC_STOP);
+			seconds_since_last_send = 0;
+			continue;
+		}
 		current = get_desired_velocity();
 		if(has_velocity_state_changed(previous, current)) {
 			previous = current;
@@ -114,11 +120,6 @@ static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3) {
 		}
 		seconds_since_last_send++;
 	}
-}
-
-void update_cmd_from_state(VelocityState state, DccCommand *cmd) {
-	cmd->speed = state.speed;
-	cmd->direction = state.direction;
 }
 
 static void dcc_recv_thread_entry(void *arg1, void *arg2, void *arg3)
@@ -137,6 +138,11 @@ static void dcc_recv_thread_entry(void *arg1, void *arg2, void *arg3)
 			leds_update_from_state(current);
 		}
 	}
+}
+
+void update_cmd_from_state(VelocityState state, DccCommand *cmd) {
+	cmd->speed = state.speed;
+	cmd->direction = state.direction;
 }
 
 int recv_answer(DccConnection *conn, char* answer){
