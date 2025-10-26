@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "thread_prios.h"
+#include "leds.h"
 
 
 LOG_MODULE_REGISTER(WIFI);
@@ -37,6 +38,7 @@ static int wifi_connect() {
 	wifi_wait_dhcp(wifi_if);
 
 	LOG_INF("Wifi connected");
+	leds_set_stage(STAGE_GREEN);
 	return 0;
 }
 

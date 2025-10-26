@@ -87,6 +87,7 @@ int dcc_connect() {
 
 	dcc_conn.sock = sock;
 
+	leds_set_stage(STAGE_BLUE);
 	return 0;
 }
 

@@ -6,6 +6,9 @@
 		led-forward = &led0;
 		led-backward = &led1;
 		led-stop = &led2;
+		led-red = &led3;
+		led-green = &led4;
+		led-blue = &led5;
 	};
 	// chosen {
 	// 	zephyr,console = &cdc_acm_uart0;
@@ -24,6 +27,15 @@
 		};
 		led2: led_2 {
 			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		};
+		led3: led_3 {
+			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		};
+		led4: led_4 {
+			gpios = <&gpio0 8 GPIO_ACTIVE_HIGH>;
+		};
+		led5: led_5 {
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		};
 	};
 
