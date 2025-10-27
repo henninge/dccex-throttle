@@ -56,25 +56,25 @@ static struct leds leds = {
 };
 
 static int leds_init();
-static void leds_init_one(struct gpio_dt_spec *spec, const char *led_name);
+static void leds_init_led(struct gpio_dt_spec *spec, const char *led_name);
 
 SYS_INIT(leds_init, APPLICATION, LEDS_INIT_PRIO);
 
 static int leds_init()
 {
-	leds_init_one(&leds.forward, "forward");
-	leds_init_one(&leds.backward, "backward");
-	leds_init_one(&leds.stop, "stop");
-	leds_init_one(&leds.red, "red");
-	leds_init_one(&leds.green, "green");
-	leds_init_one(&leds.blue, "blue");
+	leds_init_led(&leds.forward, "forward");
+	leds_init_led(&leds.backward, "backward");
+	leds_init_led(&leds.stop, "stop");
+	leds_init_led(&leds.red, "red");
+	leds_init_led(&leds.green, "green");
+	leds_init_led(&leds.blue, "blue");
 
 	LOG_INF("LEDs initialized");
 	leds_set_stage(STAGE_RED);
 	return 0;
 }
 
-static void leds_init_one(struct gpio_dt_spec *spec, const char *led_name) {
+static void leds_init_led(struct gpio_dt_spec *spec, const char *led_name) {
 	gpio_pin_configure_dt(spec, GPIO_OUTPUT | DT_GPIO_FLAGS(LED_FORWARD, gpios ) | GPIO_OUTPUT_INACTIVE);
 	if (!gpio_is_ready_dt(spec)) {
 		LOG_ERR("Error: %s led device not ready", led_name);
@@ -84,6 +84,7 @@ static void leds_init_one(struct gpio_dt_spec *spec, const char *led_name) {
 void leds_update_from_state(VelocityState velocity) {
 	gpio_pin_set_dt(&leds.forward, velocity.direction == DIR_FORWARD ? 1 : 0);
 	gpio_pin_set_dt(&leds.backward, velocity.direction == DIR_BACKWARD ? 1 : 0);
+	gpio_pin_set_dt(&leds.stop, velocity.stop ? 1 : 0);
 }
 
 void leds_set_stage(int stage) {

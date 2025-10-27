@@ -46,7 +46,7 @@ static void update_cmd_from_state(VelocityState state, DccCommand *cmd);
 static int dcc_send(DccConnection* conn, char* command);
 static void dcc_format_command(char *cmd_buffer, DccCommand cmd);
 static int recv_answer(DccConnection *conn, char* answer);
-static VelocityState dcc_decode_answer(char* answer, VelocityState previous);
+static bool dcc_decode_answer(char *answer, int *velocity);
 static VelocityState dcc_decode_velocity(int velocity);
 
 SYS_INIT(dcc_connect, APPLICATION, DCC_CONNECT_PRIO);
@@ -108,7 +108,7 @@ static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3) {
 			seconds_since_last_send = 0;
 			continue;
 		}
-		current = get_desired_velocity();
+		current = get_desired_state();
 		if(has_velocity_state_changed(previous, current)) {
 			previous = current;
 			update_cmd_from_state(current, &last_cmd);
@@ -127,22 +127,20 @@ static void dcc_recv_thread_entry(void *arg1, void *arg2, void *arg3)
 {
 	LOG_INF("recv_thread starting");
 	DccConnection *conn = (DccConnection *)arg1;
-	VelocityState current = {
-		.speed = 0,
-		.direction = DIR_FORWARD
-	};
 	char answer[101];
+	int raw_velocity;
 	while (1) {
 		int ret = recv_answer(conn, answer);
-		if(ret > 0) {
-			current = dcc_decode_answer(answer, current);
+		if(ret > 0 && dcc_decode_answer(answer, &raw_velocity)) {
+			
 			leds_update_from_state(current);
+
 		}
 	}
 }
 
 void update_cmd_from_state(VelocityState state, DccCommand *cmd) {
-	cmd->speed = state.speed;
+	cmd->speed = state.stop ? -1 : state.speed;
 	cmd->direction = state.direction;
 }
 
@@ -166,26 +164,27 @@ int recv_answer(DccConnection *conn, char* answer){
 	return ret;
 }
 
-VelocityState dcc_decode_answer(char *answer, VelocityState previous) {
-	int velocity, flags;
-	int n_decoded = sscanf(answer, "<l 3 0 %d %d>", &velocity, &flags);
-	if(n_decoded == 2) {
-		LOG_INF("speed: %d, flags: %d ", velocity, flags);
-		return dcc_decode_velocity(velocity);
-	}
-	return previous;
+bool dcc_decode_answer(char *answer, int *raw_velocity) {
+	int flags;
+	int n_decoded = sscanf(answer, "<l 3 0 %d %d>", raw_velocity, &flags);
+	return n_decoded == 2;
 }
 
 VelocityState dcc_decode_velocity(int velocity) {
 	VelocityState new_velocity;
-	if (velocity > 127 ) {
+	if (velocity > 127) {
 		new_velocity.direction = DIR_FORWARD;
 		velocity -= 129;
 	} else {
 		new_velocity.direction = DIR_BACKWARD;
 		velocity -= 1;
 	}
-	new_velocity.speed = velocity <= 0 ? 0 : velocity;
+	new_velocity.stop = velocity == 0;
+	if (new_velocity.stop) {
+		new_velocity.speed = 0;
+	} else {
+		new_velocity.speed = velocity <= 0 ? 0 : velocity;
+	}
 	return new_velocity;
 }
 
