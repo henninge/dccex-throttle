@@ -7,10 +7,17 @@
 
 #define STATE_THREAD_STACK_SIZE 1024
 
-K_MUTEX_DEFINE(desired_speed_mutex);
-VelocityState desired_speed = {
+K_MUTEX_DEFINE(desired_state_mutex);
+VelocityState desired_state = {
 	.speed = 0,
-	.direction = DIR_FORWARD
+	.direction = DIR_FORWARD,
+	.stop = false
+};
+
+VelocityState actual_state = {
+	.speed = 0,
+	.direction = DIR_FORWARD,
+	.stop = false
 };
 
 static void update_desired_speed_from_message(struct message msg);
@@ -29,28 +36,33 @@ static void desired_state_thread_entry(void *arg1, void *arg2, void *arg3) {
 }
 
 void update_desired_speed_from_message(struct message msg) {
-	k_mutex_lock(&desired_speed_mutex, K_FOREVER);
+	k_mutex_lock(&desired_state_mutex, K_FOREVER);
 	switch(msg.type) {
 	case MSG_SPEED:
-		desired_speed.speed = msg.value;
+		desired_state.speed = msg.value;
 		break;
 	case MSG_DIRECTION:
-		if (msg.value != desired_speed.direction) {
-			desired_speed.speed = 0;
-			desired_speed.direction = msg.value;
+		if (msg.value != desired_state.direction) {
+			desired_state.speed = 0;
+			desired_state.direction = msg.value;
 		}
 		break;
 	}
-	k_mutex_unlock(&desired_speed_mutex);
+	k_mutex_unlock(&desired_state_mutex);
 }
 
-VelocityState get_desired_velocity() {
-	k_mutex_lock(&desired_speed_mutex, K_FOREVER);
-	VelocityState current_val = desired_speed;
-	k_mutex_unlock(&desired_speed_mutex);
+VelocityState get_desired_state() {
+	k_mutex_lock(&desired_state_mutex, K_FOREVER);
+	VelocityState current_val = desired_state;
+	k_mutex_unlock(&desired_state_mutex);
 	return current_val;
 }
 
 bool has_velocity_state_changed(VelocityState old, VelocityState new) {
 	return !(old.speed == new.speed && old.direction == new.direction);
+}
+
+VelocityState set_actual_state(VelocityState new_state) {
+	actual_state = new_state;
+	return actual_state;
 }

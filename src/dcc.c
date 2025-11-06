@@ -98,7 +98,8 @@ static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3) {
 	VelocityState current;
 	VelocityState previous = {
 		.speed = 0,
-		.direction = DIR_FORWARD
+		.direction = DIR_FORWARD,
+		.stop = false
 	};
 	dcc_send(conn, DCC_LOCO_STAT);
 	int seconds_since_last_send = 0;
@@ -108,7 +109,7 @@ static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3) {
 			seconds_since_last_send = 0;
 			continue;
 		}
-		current = get_desired_velocity();
+		current = get_desired_state();
 		if(has_velocity_state_changed(previous, current)) {
 			previous = current;
 			update_cmd_from_state(current, &last_cmd);
@@ -129,7 +130,8 @@ static void dcc_recv_thread_entry(void *arg1, void *arg2, void *arg3)
 	DccConnection *conn = (DccConnection *)arg1;
 	VelocityState current = {
 		.speed = 0,
-		.direction = DIR_FORWARD
+		.direction = DIR_FORWARD,
+		.stop = false
 	};
 	char answer[101];
 	while (1) {
