@@ -1,13 +1,16 @@
 #ifndef _LEDS_H_
 #define _LEDS_H_
 
-#include "state.h"
 
-#define STAGE_GREEN 1
-#define STAGE_RED 2
-#define STAGE_BLUE 3
+#define LED_GREEN_BIT 0x1
+#define LED_RED_BIT 0x2
+#define LED_BLUE_BIT 0x4
 
-extern void leds_update_from_state(VelocityState velocity);
-extern void leds_set_stage(int stage);
+#define LED_FORWARD_BIT 0x1
+#define LED_BACKWARD_BIT 0x2
+#define LED_STOP_BIT 0x4
+
+extern void leds_update(int led_bits);
+extern void leds_set_rgb(int led_bits);
 
 #endif

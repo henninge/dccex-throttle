@@ -18,7 +18,6 @@
 #include <zephyr/logging/log.h>
 
 #include "thread_prios.h"
-#include "queue.h"
 
 LOG_MODULE_REGISTER(POTI);
 
@@ -120,7 +119,7 @@ static int32_t last_sent_speed;
 static void poti_handle(int32_t value) {
 	int32_t speed = convert_to_speed(value);
 	if (has_speed_changed(speed)) {
-		queue_send_speed(speed);
+		LOG_INF("Spped is now %d\n", speed);
 		last_sent_speed = speed;
 	}
 }

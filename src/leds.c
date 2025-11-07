@@ -3,9 +3,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 
-#include "queue.h"
 #include "thread_prios.h"
-#include "state.h"
 #include "leds.h"
 
 LOG_MODULE_REGISTER(LEDS);
@@ -70,7 +68,6 @@ static int leds_init()
 	leds_init_led(&leds.blue, "blue");
 
 	LOG_INF("LEDs initialized");
-	leds_set_stage(STAGE_RED);
 	return 0;
 }
 
@@ -81,27 +78,14 @@ static void leds_init_led(struct gpio_dt_spec *spec, const char *led_name) {
 	}
 }
 
-void leds_update_from_state(VelocityState velocity) {
-	gpio_pin_set_dt(&leds.forward, velocity.direction == DIR_FORWARD ? 1 : 0);
-	gpio_pin_set_dt(&leds.backward, velocity.direction == DIR_BACKWARD ? 1 : 0);
-	gpio_pin_set_dt(&leds.stop, velocity.stop ? 1 : 0);
+void leds_update(int led_bits) {
+	gpio_pin_set_dt(&leds.forward, led_bits & LED_FORWARD_BIT ? 1 : 0);
+	gpio_pin_set_dt(&leds.backward, led_bits & LED_BACKWARD_BIT ? 1 : 0);
+	gpio_pin_set_dt(&leds.stop, led_bits & LED_STOP_BIT ? 1 : 0);
 }
 
-void leds_set_stage(int stage) {
-	gpio_pin_set_dt(&leds.red, 0);
-	gpio_pin_set_dt(&leds.green, 0);
-	gpio_pin_set_dt(&leds.blue, 0);
-	struct gpio_dt_spec *spec = &leds.green;
-	switch(stage) {
-	case STAGE_RED:
-		spec = &leds.red;
-		break;
-	case STAGE_GREEN:
-		spec = &leds.green;
-		break;
-	case STAGE_BLUE:
-		spec = &leds.blue;
-		break;
-	}
-	gpio_pin_set_dt(spec, 1);
+void leds_set_rgb(int led_bits) {
+	gpio_pin_set_dt(&leds.red, led_bits & LED_RED_BIT ? 1 : 0);
+	gpio_pin_set_dt(&leds.green, led_bits & LED_GREEN_BIT ? 1 : 0);
+	gpio_pin_set_dt(&leds.blue, led_bits & LED_BLUE_BIT ? 1 : 0);
 }
