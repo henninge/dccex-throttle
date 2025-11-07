@@ -1,18 +1,21 @@
 / {
 	aliases {
-		btn-forward = &button1;
-		btn-backward = &button0;
+		btn-forward = &button0;
+		btn-backward = &button1;
 		btn-stop = &button2;
-		led-forward = &led1;
-		led-backward = &led0;
+		btn-white-left = &button7;
+		btn-white-right = &button8;
+		btn-yellow = &button5;
+		btn-black = &button6;
+		btn-green = &button3;
+		btn-blue = &button4;
+		led-forward = &led0;
+		led-backward = &led1;
 		led-stop = &led2;
 		led-red = &led3;
 		led-green = &led4;
 		led-blue = &led5;
 	};
-	// chosen {
-	// 	zephyr,console = &cdc_acm_uart0;
-	// };
 	zephyr,user {
 		io-channels = <&adc 0>;
 	};
@@ -20,10 +23,10 @@
 	leds {
 		compatible = "gpio-leds";
 		led0: led_0 {
-			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 		};
 		led1: led_1 {
-			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 		};
 		led2: led_2 {
 			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
@@ -42,16 +45,40 @@
 	buttons {
 			 compatible = "gpio-keys";
 			 button0: button_0 {
-					 gpios = <&gpio0 8 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+					 gpios = <&gpio0 10 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
 					 label = "Forward button";
 			 };
 			 button1: button_1 {
-					 gpios = <&gpio0 10 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+					 gpios = <&gpio0 8 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
 					 label = "Backward button";
 			 };
 			 button2: button_2 {
 					 gpios = <&gpio0 12 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
 					 label = "Backward button";
+			 };
+			 button3: button_3 {
+					 gpios = <&gpio0 14 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+					 label = "Green button";
+			 };
+			 button4: button_4 {
+					 gpios = <&gpio0 15 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+					 label = "Blue button";
+			 };
+			 button5: button_5 {
+					 gpios = <&gpio0 16 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+					 label = "Yellow button";
+			 };
+			 button6: button_6 {
+					 gpios = <&gpio0 17 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+					 label = "Black button";
+			 };
+			 button7: button_7 {
+					 gpios = <&gpio0 18 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+					 label = "White letft button";
+			 };
+			 button8: button_8 {
+					 gpios = <&gpio0 19 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+					 label = "White right button";
 			 };
 	 };
 };
