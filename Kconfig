@@ -3,16 +3,16 @@ config POTI_SAMPLES
 	default 10
 
 config POTI_MIN
-	int "The mnimum raw adc value where speed = 0 (range 0-4095)."
-	default 700
+	int "The mnimum raw adc value where speed = 127 (range 0-4095)."
+	default 2600
 
 config POTI_MAX
-	int "The maximum raw adc value where speed = 127 (range 0-4095)."
-	default 2700
+	int "The maximum raw adc value where speed = 0 (range 0-4095)."
+	default 2830
 
 config POTI_POLL_MSEC
 	int "The polling interval in milliseconds."
-	default 100
+	default 500
 
 config WIFI_SSID
 	string "The SSID of the DCC-EX wifi to connect to."

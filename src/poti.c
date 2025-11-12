@@ -140,7 +140,8 @@ int32_t convert_to_speed(int32_t raw_val) {
 		raw_val -= CONFIG_POTI_MIN;
 	}
 
-	double ratio = ((double)raw_val)/POTI_RANGE;
+	// The poti was connected backwards.
+	double ratio = 1.0 - ((double)raw_val)/POTI_RANGE;
 
 	return (int32_t)(ratio * 128.0);
 }
