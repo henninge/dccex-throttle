@@ -125,7 +125,7 @@ static void btn_ctrl_pressed(const struct device *dev, struct gpio_callback *cb,
 	{
 		int val = gpio_pin_get(dev, buttons.stop.pin);
 		LOG_DBG("STOP button pressed, val= %d", val);
-		btn_set_stop();
+		queue_send_stop();
 	}
 }
 

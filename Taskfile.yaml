@@ -1,0 +1,14 @@
+version: '3.45.5'
+
+env:
+  MINICOM: "-D /dev/ttyACM0 -b 115200 --ansi --term=ansi"
+
+tasks:
+  build:
+    cmd: west build -p auto -b rpi_pico2/rp2350a/m33/w --extra-conf local.conf .
+  build-always:
+    cmd: west build -p always -b rpi_pico2/rp2350a/m33/w --extra-conf local.conf .
+  flash:
+    cmd: west flash -r uf2
+  console:
+    cmd: minicom

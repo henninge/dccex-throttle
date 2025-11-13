@@ -89,7 +89,7 @@ static void poti_poll_loop() {
 	while (1) {
 		value = poti_read(&adc_poti);
 		if (value < 0) {
-			LOG_WRN("Could not read (%d)\n", value);
+			LOG_WRN("Could not read (%d)", value);
 			continue;
 		}
 		poti_handle(value);
