@@ -45,6 +45,7 @@ static void dcc_recv_thread_entry(void *arg1, void *arg2, void *arg3);
 static void update_cmd_from_state(VelocityState state, DccCommand *cmd);
 static int dcc_send(DccConnection* conn, char* command);
 static void dcc_format_command(char *cmd_buffer, DccCommand cmd);
+static void dcc_function_command(char *cmd_buffer, int addr, int function, int onoff);
 static int recv_answer(DccConnection *conn, char* answer);
 static VelocityState dcc_decode_answer(char* answer, VelocityState previous);
 static VelocityState dcc_decode_velocity(int velocity);
@@ -102,6 +103,8 @@ static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3) {
 		.stop = false
 	};
 	dcc_send(conn, DCC_LOCO_STAT);
+	dcc_function_command(dcc_command, last_cmd.addr, 0, 1);
+	dcc_send(conn, dcc_command);
 	int seconds_since_last_send = 0;
 	while(1) {
 		if(btn_wait_stop(K_SECONDS(1))) {
@@ -206,6 +209,11 @@ int dcc_send(DccConnection* conn, char* command) {
 void dcc_format_command(char *cmd_buffer, DccCommand cmd){
 	sprintf(cmd_buffer, "<t %d %d %d>", cmd.addr, cmd.speed, cmd.direction);
 }
+
+void dcc_function_command(char *cmd_buffer, int addr, int function, int onoff){
+	sprintf(cmd_buffer, "<F %d %d %d>", addr, function, onoff);
+}
+
 
 // Ping (no of loco slots) "<#>"
 // Track Info "<=>"
