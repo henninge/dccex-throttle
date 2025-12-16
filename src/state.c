@@ -33,7 +33,7 @@ K_MSGQ_DEFINE(state_changed, sizeof(Velocity), 20, 1);
 Velocity dcc_velocity = {
 	.speed = 0,
 	.direction = DIR_FORWARD,
-	.stop = false
+	.stop = true,
 };
 
 static Velocity new_velocity_from_message(struct message msg);
@@ -49,6 +49,7 @@ static void desired_state_thread_entry(void *arg1, void *arg2, void *arg3) {
 	enum state current_state = halted_fwd;
 	struct message msg;
 	Velocity new_velocity;
+	queue_send(&dcc_velocity);
 	while(1) {
 		msg = queue_wait_receive();
 		new_velocity = new_velocity_from_message(msg);

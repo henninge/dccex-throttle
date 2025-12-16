@@ -100,13 +100,13 @@ static void dcc_send_thread_entry(void *arg1, void *arg2, void *arg3) {
 	DccConnection *conn = (DccConnection *)arg1;
 	char dcc_command[20];
 	Velocity current;
-	dcc_send(conn, DCC_OFF);
 	dcc_function_command(dcc_command, last_cmd.addr, 0, 1);
 	dcc_send(conn, dcc_command);
 	int seconds_since_last_send = 0;
 	while(1) {
 		if(wait_velocity_change(&current, K_SECONDS(1))) {
 			LOG_INF("changed");
+			leds_update_from_velocity(current);
 			if(current.stop) {
 				dcc_send(conn, DCC_STOP);
 			} else {
@@ -137,7 +137,7 @@ static void dcc_recv_thread_entry(void *arg1, void *arg2, void *arg3)
 		int ret = recv_answer(conn, answer);
 		if(ret > 0) {
 			current = dcc_decode_answer(answer, current);
-			leds_update_from_state(current);
+			LOG_INF("speed: %d, direction: %d ", current.speed, current.direction);
 		}
 	}
 }
@@ -171,7 +171,6 @@ Velocity dcc_decode_answer(char *answer, Velocity previous) {
 	int velocity, flags;
 	int n_decoded = sscanf(answer, "<l 3 0 %d %d>", &velocity, &flags);
 	if(n_decoded == 2) {
-		LOG_INF("speed: %d, flags: %d ", velocity, flags);
 		return dcc_decode_velocity(velocity);
 	}
 	return previous;

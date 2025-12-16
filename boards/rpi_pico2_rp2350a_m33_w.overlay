@@ -12,9 +12,9 @@
 		led-forward = &led0;
 		led-backward = &led1;
 		led-stop = &led2;
-		led-red = &led3;
+		led-blue = &led3;
 		led-green = &led4;
-		led-blue = &led5;
+		led-red = &led5;
 	};
 	zephyr,user {
 		io-channels = <&adc 0>;

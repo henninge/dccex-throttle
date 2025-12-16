@@ -81,7 +81,7 @@ static void leds_init_led(struct gpio_dt_spec *spec, const char *led_name) {
 	}
 }
 
-void leds_update_from_state(Velocity velocity) {
+void leds_update_from_velocity(Velocity velocity) {
 	gpio_pin_set_dt(&leds.forward, velocity.direction == DIR_FORWARD ? 1 : 0);
 	gpio_pin_set_dt(&leds.backward, velocity.direction == DIR_BACKWARD ? 1 : 0);
 	gpio_pin_set_dt(&leds.stop, velocity.stop ? 1 : 0);
