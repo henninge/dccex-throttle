@@ -1,3 +1,7 @@
+config GIT_COMMIT
+	string "Git commit this image was built from."
+	default "unknown"
+
 config POTI_SAMPLES
 	int "Number of samples to be made on ADC channel for the potentiometer."
 	default 10

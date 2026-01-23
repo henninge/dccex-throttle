@@ -4,11 +4,12 @@ project(dccex-throttle)
 
 target_sources(
 	app PRIVATE
+	src/banner.c
+	src/buttons.c
+	src/dcc.c
+	src/leds.c
 	src/poti.c
 	src/queue.c
-	src/dcc.c
-	src/buttons.c
-	src/leds.c
 	src/state.c
 )
 

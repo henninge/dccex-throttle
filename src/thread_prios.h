@@ -1,6 +1,7 @@
 #ifndef _THREAD_PRIOS_H_
 #define _THREAD_PRIOS_H_
 
+#define APP_BANNER_PRIO 95
 #define CONSOLE_INIT_PRIO 96
 #define BTN_INIT_PRIO 97
 #define LEDS_INIT_PRIO 97
