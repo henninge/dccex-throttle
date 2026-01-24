@@ -36,7 +36,7 @@ Velocity dcc_velocity = {
 	.stop = true,
 };
 
-static Velocity new_velocity_from_message(struct message msg);
+static void update_velocity_from_message(Velocity *velocity, struct message msg);
 static void desired_state_thread_entry(void *arg1, void *arg2, void *arg3);
 static bool step_state(enum state *state, Velocity new_v);
 static void send_velocity(Velocity *current_v);
@@ -55,13 +55,13 @@ static void log_message(struct message msg){
 static void desired_state_thread_entry(void *arg1, void *arg2, void *arg3) {
 	enum state current_state = halted_fwd;
 	struct message msg;
-	Velocity new_velocity;
+	Velocity desired_velocity = dcc_velocity;
 	send_velocity(&dcc_velocity);
 	while(1) {
 		msg = queue_wait_receive();
 		log_message(msg);
-		new_velocity = new_velocity_from_message(msg);
-		if(step_state(&current_state, new_velocity)){
+		update_velocity_from_message(&desired_velocity, msg);
+		if(step_state(&current_state, desired_velocity)){
 			LOG_INF("New state (speed): %s (%d)", state_strings[current_state], dcc_velocity.speed);
 			send_velocity(&dcc_velocity);
 		}
@@ -93,20 +93,19 @@ bool wait_velocity_change(Velocity *velocity, k_timeout_t timeout) {
 	return has_changed;
 };
 
-Velocity new_velocity_from_message(struct message msg) {
-	Velocity new_velocity = dcc_velocity;
+void update_velocity_from_message(Velocity *velocity, struct message msg) {
+	velocity->stop = false;
 	switch(msg.type) {
 	case MSG_SPEED:
-		new_velocity.speed = msg.value;
+		velocity->speed = msg.value;
 		break;
 	case MSG_DIRECTION:
-		new_velocity.direction = msg.value;
+		velocity->direction = msg.value;
 		break;
 	case MSG_STOP:
-		new_velocity.stop = true;
+		velocity->stop = true;
 		break;
 	}
-	return new_velocity;
 }
 
 #define get_halted_state(v) (v.direction == DIR_FORWARD ? halted_fwd : halted_bwd)
@@ -117,6 +116,7 @@ enum state step_state_halted(Velocity new_v) {
 	dcc_velocity.speed = 0;
 	dcc_velocity.direction = new_v.direction;
 	if (new_v.stop) {
+		// Allows emergency stop while loco is still decelerating.
 		dcc_velocity.stop = true;
 		// Trigger a return to halted.
 		queue_send_speed(0);
@@ -181,6 +181,7 @@ StepFunction steps[] = {
 
 bool step_state(enum state *state, Velocity new_v) {
 	bool has_speed_changed = new_v.speed != dcc_velocity.speed;
+	dcc_velocity.stop = false;
 
 	enum state new_state = steps[*state](new_v);
 	bool has_state_changed = new_state != *state;

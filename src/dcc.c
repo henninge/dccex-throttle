@@ -136,7 +136,6 @@ static void dcc_recv_thread_entry(void *arg1, void *arg2, void *arg3)
 	while (1) {
 		int ret = recv_answer(conn, answer);
 		if(ret > 0 && dcc_decode_answer(answer, &current)) {
-			if (current.stop) send_velocity_zero();
 			LOG_INF("speed: %d, direction: %d ", current.speed, current.direction);
 		}
 	}
