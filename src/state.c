@@ -39,29 +39,46 @@ Velocity dcc_velocity = {
 static Velocity new_velocity_from_message(struct message msg);
 static void desired_state_thread_entry(void *arg1, void *arg2, void *arg3);
 static bool step_state(enum state *state, Velocity new_v);
-static void queue_send(Velocity *current_v);
+static void send_velocity(Velocity *current_v);
 
 K_THREAD_DEFINE(desired_state_thread, STATE_THREAD_STACK_SIZE,
 				desired_state_thread_entry, NULL, NULL, NULL,
 				STATE_THREAD_PRIORITY, 0, 0);
 
+static void log_message(struct message msg){
+	char message_string[20];
+	if(sprintf_message(message_string, msg) > 0){
+		LOG_INF("Received message: %s", message_string);
+	}
+}
+
 static void desired_state_thread_entry(void *arg1, void *arg2, void *arg3) {
 	enum state current_state = halted_fwd;
 	struct message msg;
 	Velocity new_velocity;
-	queue_send(&dcc_velocity);
+	send_velocity(&dcc_velocity);
 	while(1) {
 		msg = queue_wait_receive();
+		log_message(msg);
 		new_velocity = new_velocity_from_message(msg);
 		if(step_state(&current_state, new_velocity)){
 			LOG_INF("New state (speed): %s (%d)", state_strings[current_state], dcc_velocity.speed);
-			queue_send(&dcc_velocity);
+			send_velocity(&dcc_velocity);
 		}
 		k_yield();
 	}
 }
 
-void queue_send(Velocity *current_v) {
+void send_velocity_zero() {
+	Velocity zero_v = {
+		.speed = 0,
+		.direction = dcc_velocity.direction,
+		.stop = false,
+	};
+	send_velocity(&zero_v);
+}
+
+void send_velocity(Velocity *current_v) {
 	while (k_msgq_put(&state_changed, current_v, K_NO_WAIT) != 0) {
 		/* message queue is full: purge old data & try again */
 		k_msgq_purge(&state_changed);
@@ -116,6 +133,7 @@ enum state step_state_driving(Velocity new_v) {
 	dcc_velocity.speed = new_v.speed;
 	if (new_v.stop) {
 		dcc_velocity.stop = true;
+		dcc_velocity.speed = 0;
 		return stopping;
 	}
 	if (new_v.speed == 0) {
@@ -143,10 +161,9 @@ enum state step_state_reverting(Velocity new_v) {
 }
 
 enum state step_state_stopping(Velocity new_v) {
-	dcc_velocity.stop = true;
+	dcc_velocity.stop = false;
+	dcc_velocity.speed = 0;
 	if (new_v.speed == 0) {
-		dcc_velocity.stop = false;
-		dcc_velocity.speed = 0;
 		dcc_velocity.direction = new_v.direction;
 		return get_halted_state(new_v);
 	}

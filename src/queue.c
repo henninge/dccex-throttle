@@ -57,3 +57,16 @@ struct message queue_wait_receive() {
 	} while(err != 0);
 	return received_msg;
 }
+
+int sprintf_message(char* buf, struct message msg) {
+	switch(msg.type) {
+	case MSG_SPEED:
+		return sprintf(buf, "Speed %d", msg.value);
+	case MSG_DIRECTION:
+		return sprintf(buf, "Direction %s", msg.value == DIR_FORWARD ? "Forward" : "Backward");
+	case MSG_STOP:
+		return sprintf(buf, "Stop");
+	default:
+		return 0;
+	}
+}

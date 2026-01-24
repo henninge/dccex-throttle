@@ -50,7 +50,7 @@ static int dcc_send(DccConnection* conn, char* command);
 static void dcc_format_command(char *cmd_buffer, DccCommand cmd);
 static void dcc_function_command(char *cmd_buffer, int addr, int function, int onoff);
 static int recv_answer(DccConnection *conn, char* answer);
-static Velocity dcc_decode_answer(char* answer, Velocity previous);
+static bool dcc_decode_answer(char *answer, Velocity *current);
 static Velocity dcc_decode_velocity(int velocity);
 
 SYS_INIT(dcc_connect, APPLICATION, DCC_CONNECT_PRIO);
@@ -135,8 +135,8 @@ static void dcc_recv_thread_entry(void *arg1, void *arg2, void *arg3)
 	char answer[101];
 	while (1) {
 		int ret = recv_answer(conn, answer);
-		if(ret > 0) {
-			current = dcc_decode_answer(answer, current);
+		if(ret > 0 && dcc_decode_answer(answer, &current)) {
+			if (current.stop) send_velocity_zero();
 			LOG_INF("speed: %d, direction: %d ", current.speed, current.direction);
 		}
 	}
@@ -167,13 +167,14 @@ int recv_answer(DccConnection *conn, char* answer){
 	return ret;
 }
 
-Velocity dcc_decode_answer(char *answer, Velocity previous) {
+bool dcc_decode_answer(char *answer, Velocity *current) {
 	int velocity, flags;
 	int n_decoded = sscanf(answer, "<l 3 0 %d %d>", &velocity, &flags);
 	if(n_decoded == 2) {
-		return dcc_decode_velocity(velocity);
+		*current = dcc_decode_velocity(velocity);
+		return true;
 	}
-	return previous;
+	return false;
 }
 
 Velocity dcc_decode_velocity(int velocity) {
@@ -186,6 +187,7 @@ Velocity dcc_decode_velocity(int velocity) {
 		velocity -= 1;
 	}
 	new_velocity.speed = velocity <= 0 ? 0 : velocity;
+	new_velocity.stop = velocity == 0;
 	return new_velocity;
 }
 

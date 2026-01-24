@@ -19,11 +19,14 @@ LOG_MODULE_REGISTER(BUTTONS);
 #define BTN_GREEN DT_ALIAS(btn_green)
 #define BTN_BLUE DT_ALIAS(btn_blue)
 
+#define BTN_DEBOUNCE_MSEC 500
+
 static int btn_init();
 static void btn_ctrl_init_callback(void);
 static void btn_func_init_callback(void);
 static void btn_ctrl_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
 static void btn_func_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
+static bool debounce(gpio_pin_t pin);
 
 SYS_INIT(btn_init, APPLICATION, BTN_INIT_PRIO);
 
@@ -109,19 +112,19 @@ static void btn_func_init_callback(void)
 
 static void btn_ctrl_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
-	if (pins & BIT(buttons.forward.pin))
+	if (pins & BIT(buttons.forward.pin) && debounce(buttons.forward.pin))
 	{
 		int val = gpio_pin_get(dev, buttons.forward.pin);
 		LOG_DBG("Forward button pressed, val= %d", val);
 		queue_send_direction(DIR_FORWARD);
 	}
-	if (pins & BIT(buttons.backward.pin))
+	if (pins & BIT(buttons.backward.pin) && debounce(buttons.backward.pin))
 	{
 		int val = gpio_pin_get(dev, buttons.backward.pin);
 		LOG_DBG("Backward button pressed, val= %d", val);
 		queue_send_direction(DIR_BACKWARD);
 	}
-	if (pins & BIT(buttons.stop.pin))
+	if (pins & BIT(buttons.stop.pin) && debounce(buttons.stop.pin))
 	{
 		int val = gpio_pin_get(dev, buttons.stop.pin);
 		LOG_DBG("STOP button pressed, val= %d", val);
@@ -146,4 +149,15 @@ static void btn_func_pressed(const struct device *dev, struct gpio_callback *cb,
 	btn_func_handle("Black", dev, pins, buttons.black.pin);
 	btn_func_handle("Green", dev, pins, buttons.green.pin);
 	btn_func_handle("Blue", dev, pins, buttons.blue.pin);
+}
+
+static int64_t btn_uptime[32] = {0};
+
+bool debounce(gpio_pin_t pin) {
+	int64_t uptime = k_uptime_get();
+	if(uptime - btn_uptime[pin] > BTN_DEBOUNCE_MSEC) {
+		btn_uptime[pin] = uptime;
+		return true;
+	}
+	return false;
 }

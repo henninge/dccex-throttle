@@ -20,5 +20,7 @@ extern void queue_send_speed(int16_t speed);
 extern void queue_send_direction(int16_t direction);
 extern void queue_send_stop();
 extern struct message queue_wait_receive();
+extern void send_velocity_zero();
+extern int sprintf_message(char *buf, struct message msg);
 
 #endif
